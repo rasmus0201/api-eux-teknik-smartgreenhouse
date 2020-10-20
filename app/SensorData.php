@@ -8,7 +8,7 @@ class SensorData extends Model
 {
     /**
      * The timestamps
-     * 
+     *
      * @var array
      */
     public $timestamps = [
@@ -21,7 +21,10 @@ class SensorData extends Model
      * @var array
      */
     protected $fillable = [
-        'sensor_id', 'value', 'sensored_at',
+        'device_id',
+        'sensor_id',
+        'value',
+        'sensored_at',
     ];
 
     /**
