@@ -8,7 +8,7 @@
                 <datetime v-model="endDate" type="datetime" :format="dt.DATETIME_MED_WITH_SECONDS"></datetime>
             </div>
             <div class="col-2">
-                <input class="form-control" type="number" v-model="delta" placeholder="Time between datapoints">
+                <input class="form-control" type="number" min="1" v-model="delta" placeholder="Time between datapoints">
             </div>
             <div class="col-2">
                 <select class="form-control" v-model="interval">
@@ -20,9 +20,30 @@
             <div class="col-2">
                 <button @click="getData" class="btn btn-primary">Refresh</button>
                 <div class="custom-control custom-checkbox">
-                    <input v-model="autorefresh" type="checkbox" class="custom-control-input" id="autorefresh">
-                    <label class="custom-control-label" for="autorefresh">Autorefresh</label>
+                    <input v-model="autorefresh.active" type="checkbox" class="custom-control-input" id="autorefresh-active">
+                    <label class="custom-control-label" for="autorefresh-active">Autorefresh</label>
                 </div>
+            </div>
+        </div>
+        <div v-if="autorefresh.active" class="row my-3">
+            <div class="col-3">
+                <input class="form-control" type="number" min="1" v-model="autorefresh.interval" placeholder="Time between refresh (seconds)">
+            </div>
+            <div class="col-3">
+                <div class="custom-control custom-checkbox">
+                    <input v-model="autorefresh.movingEnd" type="checkbox" class="custom-control-input" id="autorefresh-movingEnd">
+                    <label class="custom-control-label" for="autorefresh-movingEnd">Should the end date move?</label>
+                </div>
+            </div>
+            <div v-if="autorefresh.movingEnd" class="col-2">
+                <input class="form-control" type="number" min="1" v-model="autorefresh.delta" placeholder="How much to add?">
+            </div>
+            <div v-if="autorefresh.movingEnd" class="col-2">
+                <select class="form-control" v-model="autorefresh.movingInterval">
+                    <option v-for="(val, index) in autorefresh.intervals" :value="val.multiplier" :key="index" :selected="autorefresh.movingInterval == val.multiplier">
+                        {{ val.label }}
+                    </option>
+                </select>
             </div>
         </div>
         <LineGraph class="mt-3" :chart-data="chartData" :options="chartOptions" />
@@ -42,8 +63,32 @@ export default {
         return {
             delta: 1,
             interval: 60,
-            autorefresh: false,
-            refreshTimer: null,
+            autorefresh: {
+                active: false,
+                movingEnd: false,
+                interval: 30,
+                delta: 1,
+                movingInterval: 60,
+                timer: null,
+                intervals: [
+                    {
+                        multiplier: 1,
+                        label: 'Sec'
+                    },
+                    {
+                        multiplier: 60,
+                        label: 'Min'
+                    },
+                    {
+                        multiplier: 60 * 60,
+                        label: 'Hour'
+                    },
+                    {
+                        multiplier: 60 * 60 * 24,
+                        label: 'Day'
+                    },
+                ],
+            },
             startDate: DateTime.local().startOf('day').toISO(),
             endDate: DateTime.local().endOf('day').toISO(),
             chartData: {},
@@ -84,23 +129,52 @@ export default {
         },
         deltaSeconds() {
             return this.delta * this.interval;
-        }
+        },
+
+        autorefreshDeltaSeconds() {
+            const delta = this.autorefresh.delta * this.autorefresh.movingInterval;
+
+            return delta >= 1 ? delta : 1;
+        },
     },
     watch: {
-        autorefresh(newVal) {
+        'autorefresh.active' (newVal) {
             if (newVal === true) {
-                this.refreshTimer = setInterval(this.timerFunc, 60 * 1000);
+                this.autorefresh.timer = setInterval(this.intervalData, this.autorefresh.interval * 1000);
             } else {
-                clearInterval(this.refreshTimer);
+                clearInterval(this.autorefresh.timer);
             }
-        }
+        },
+
+        'autorefresh.interval' (newVal) {
+            if (newVal <= 0) {
+                return;
+            }
+
+            if (this.autorefresh.active === false) {
+                return;
+            }
+
+            if (this.autorefresh.timer) {
+                clearInterval(this.autorefresh.timer);
+            }
+
+            this.autorefresh.timer = setInterval(this.intervalData, this.autorefresh.interval * 1000);
+        },
+
     },
     mounted() {
         this.getData();
     },
     methods: {
-        timerFunc() {
-            // TODO
+        intervalData() {
+            if (this.autorefresh.movingEnd === true) {
+                this.endDate = DateTime.fromISO(this.endDate)
+                    .plus({ seconds: this.autorefreshDeltaSeconds })
+                    .toISO();
+            }
+
+            this.getData();
         },
 
         getData() {

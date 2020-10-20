@@ -1948,6 +1948,27 @@ function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len 
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
@@ -1959,8 +1980,27 @@ function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len 
     return {
       delta: 1,
       interval: 60,
-      autorefresh: false,
-      refreshTimer: null,
+      autorefresh: {
+        active: false,
+        movingEnd: false,
+        interval: 30,
+        delta: 1,
+        movingInterval: 60,
+        timer: null,
+        intervals: [{
+          multiplier: 1,
+          label: 'Sec'
+        }, {
+          multiplier: 60,
+          label: 'Min'
+        }, {
+          multiplier: 60 * 60,
+          label: 'Hour'
+        }, {
+          multiplier: 60 * 60 * 24,
+          label: 'Day'
+        }]
+      },
       startDate: luxon__WEBPACK_IMPORTED_MODULE_0__["DateTime"].local().startOf('day').toISO(),
       endDate: luxon__WEBPACK_IMPORTED_MODULE_0__["DateTime"].local().endOf('day').toISO(),
       chartData: {},
@@ -1996,22 +2036,48 @@ function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len 
     },
     deltaSeconds: function deltaSeconds() {
       return this.delta * this.interval;
+    },
+    autorefreshDeltaSeconds: function autorefreshDeltaSeconds() {
+      var delta = this.autorefresh.delta * this.autorefresh.movingInterval;
+      return delta >= 1 ? delta : 1;
     }
   },
   watch: {
-    autorefresh: function autorefresh(newVal) {
+    'autorefresh.active': function autorefreshActive(newVal) {
       if (newVal === true) {
-        this.refreshTimer = setInterval(this.timerFunc, 60 * 1000);
+        this.autorefresh.timer = setInterval(this.intervalData, this.autorefresh.interval * 1000);
       } else {
-        clearInterval(this.refreshTimer);
+        clearInterval(this.autorefresh.timer);
       }
+    },
+    'autorefresh.interval': function autorefreshInterval(newVal) {
+      if (newVal <= 0) {
+        return;
+      }
+
+      if (this.autorefresh.active === false) {
+        return;
+      }
+
+      if (this.autorefresh.timer) {
+        clearInterval(this.autorefresh.timer);
+      }
+
+      this.autorefresh.timer = setInterval(this.intervalData, this.autorefresh.interval * 1000);
     }
   },
   mounted: function mounted() {
     this.getData();
   },
   methods: {
-    timerFunc: function timerFunc() {// TODO
+    intervalData: function intervalData() {
+      if (this.autorefresh.movingEnd === true) {
+        this.endDate = luxon__WEBPACK_IMPORTED_MODULE_0__["DateTime"].fromISO(this.endDate).plus({
+          seconds: this.autorefreshDeltaSeconds
+        }).toISO();
+      }
+
+      this.getData();
     },
     getData: function getData() {
       var _this = this;
@@ -67334,7 +67400,11 @@ var render = function() {
               }
             ],
             staticClass: "form-control",
-            attrs: { type: "number", placeholder: "Time between datapoints" },
+            attrs: {
+              type: "number",
+              min: "1",
+              placeholder: "Time between datapoints"
+            },
             domProps: { value: _vm.delta },
             on: {
               input: function($event) {
@@ -67412,35 +67482,38 @@ var render = function() {
                 {
                   name: "model",
                   rawName: "v-model",
-                  value: _vm.autorefresh,
-                  expression: "autorefresh"
+                  value: _vm.autorefresh.active,
+                  expression: "autorefresh.active"
                 }
               ],
               staticClass: "custom-control-input",
-              attrs: { type: "checkbox", id: "autorefresh" },
+              attrs: { type: "checkbox", id: "autorefresh-active" },
               domProps: {
-                checked: Array.isArray(_vm.autorefresh)
-                  ? _vm._i(_vm.autorefresh, null) > -1
-                  : _vm.autorefresh
+                checked: Array.isArray(_vm.autorefresh.active)
+                  ? _vm._i(_vm.autorefresh.active, null) > -1
+                  : _vm.autorefresh.active
               },
               on: {
                 change: function($event) {
-                  var $$a = _vm.autorefresh,
+                  var $$a = _vm.autorefresh.active,
                     $$el = $event.target,
                     $$c = $$el.checked ? true : false
                   if (Array.isArray($$a)) {
                     var $$v = null,
                       $$i = _vm._i($$a, $$v)
                     if ($$el.checked) {
-                      $$i < 0 && (_vm.autorefresh = $$a.concat([$$v]))
+                      $$i < 0 &&
+                        _vm.$set(_vm.autorefresh, "active", $$a.concat([$$v]))
                     } else {
                       $$i > -1 &&
-                        (_vm.autorefresh = $$a
-                          .slice(0, $$i)
-                          .concat($$a.slice($$i + 1)))
+                        _vm.$set(
+                          _vm.autorefresh,
+                          "active",
+                          $$a.slice(0, $$i).concat($$a.slice($$i + 1))
+                        )
                     }
                   } else {
-                    _vm.autorefresh = $$c
+                    _vm.$set(_vm.autorefresh, "active", $$c)
                   }
                 }
               }
@@ -67450,13 +67523,193 @@ var render = function() {
               "label",
               {
                 staticClass: "custom-control-label",
-                attrs: { for: "autorefresh" }
+                attrs: { for: "autorefresh-active" }
               },
               [_vm._v("Autorefresh")]
             )
           ])
         ])
       ]),
+      _vm._v(" "),
+      _vm.autorefresh.active
+        ? _c("div", { staticClass: "row my-3" }, [
+            _c("div", { staticClass: "col-3" }, [
+              _c("input", {
+                directives: [
+                  {
+                    name: "model",
+                    rawName: "v-model",
+                    value: _vm.autorefresh.interval,
+                    expression: "autorefresh.interval"
+                  }
+                ],
+                staticClass: "form-control",
+                attrs: {
+                  type: "number",
+                  min: "1",
+                  placeholder: "Time between refresh (seconds)"
+                },
+                domProps: { value: _vm.autorefresh.interval },
+                on: {
+                  input: function($event) {
+                    if ($event.target.composing) {
+                      return
+                    }
+                    _vm.$set(_vm.autorefresh, "interval", $event.target.value)
+                  }
+                }
+              })
+            ]),
+            _vm._v(" "),
+            _c("div", { staticClass: "col-3" }, [
+              _c("div", { staticClass: "custom-control custom-checkbox" }, [
+                _c("input", {
+                  directives: [
+                    {
+                      name: "model",
+                      rawName: "v-model",
+                      value: _vm.autorefresh.movingEnd,
+                      expression: "autorefresh.movingEnd"
+                    }
+                  ],
+                  staticClass: "custom-control-input",
+                  attrs: { type: "checkbox", id: "autorefresh-movingEnd" },
+                  domProps: {
+                    checked: Array.isArray(_vm.autorefresh.movingEnd)
+                      ? _vm._i(_vm.autorefresh.movingEnd, null) > -1
+                      : _vm.autorefresh.movingEnd
+                  },
+                  on: {
+                    change: function($event) {
+                      var $$a = _vm.autorefresh.movingEnd,
+                        $$el = $event.target,
+                        $$c = $$el.checked ? true : false
+                      if (Array.isArray($$a)) {
+                        var $$v = null,
+                          $$i = _vm._i($$a, $$v)
+                        if ($$el.checked) {
+                          $$i < 0 &&
+                            _vm.$set(
+                              _vm.autorefresh,
+                              "movingEnd",
+                              $$a.concat([$$v])
+                            )
+                        } else {
+                          $$i > -1 &&
+                            _vm.$set(
+                              _vm.autorefresh,
+                              "movingEnd",
+                              $$a.slice(0, $$i).concat($$a.slice($$i + 1))
+                            )
+                        }
+                      } else {
+                        _vm.$set(_vm.autorefresh, "movingEnd", $$c)
+                      }
+                    }
+                  }
+                }),
+                _vm._v(" "),
+                _c(
+                  "label",
+                  {
+                    staticClass: "custom-control-label",
+                    attrs: { for: "autorefresh-movingEnd" }
+                  },
+                  [_vm._v("Should the end date move?")]
+                )
+              ])
+            ]),
+            _vm._v(" "),
+            _vm.autorefresh.movingEnd
+              ? _c("div", { staticClass: "col-2" }, [
+                  _c("input", {
+                    directives: [
+                      {
+                        name: "model",
+                        rawName: "v-model",
+                        value: _vm.autorefresh.delta,
+                        expression: "autorefresh.delta"
+                      }
+                    ],
+                    staticClass: "form-control",
+                    attrs: {
+                      type: "number",
+                      min: "1",
+                      placeholder: "How much to add?"
+                    },
+                    domProps: { value: _vm.autorefresh.delta },
+                    on: {
+                      input: function($event) {
+                        if ($event.target.composing) {
+                          return
+                        }
+                        _vm.$set(_vm.autorefresh, "delta", $event.target.value)
+                      }
+                    }
+                  })
+                ])
+              : _vm._e(),
+            _vm._v(" "),
+            _vm.autorefresh.movingEnd
+              ? _c("div", { staticClass: "col-2" }, [
+                  _c(
+                    "select",
+                    {
+                      directives: [
+                        {
+                          name: "model",
+                          rawName: "v-model",
+                          value: _vm.autorefresh.movingInterval,
+                          expression: "autorefresh.movingInterval"
+                        }
+                      ],
+                      staticClass: "form-control",
+                      on: {
+                        change: function($event) {
+                          var $$selectedVal = Array.prototype.filter
+                            .call($event.target.options, function(o) {
+                              return o.selected
+                            })
+                            .map(function(o) {
+                              var val = "_value" in o ? o._value : o.value
+                              return val
+                            })
+                          _vm.$set(
+                            _vm.autorefresh,
+                            "movingInterval",
+                            $event.target.multiple
+                              ? $$selectedVal
+                              : $$selectedVal[0]
+                          )
+                        }
+                      }
+                    },
+                    _vm._l(_vm.autorefresh.intervals, function(val, index) {
+                      return _c(
+                        "option",
+                        {
+                          key: index,
+                          domProps: {
+                            value: val.multiplier,
+                            selected:
+                              _vm.autorefresh.movingInterval == val.multiplier
+                          }
+                        },
+                        [
+                          _vm._v(
+                            "\n                    " +
+                              _vm._s(val.label) +
+                              "\n                "
+                          )
+                        ]
+                      )
+                    }),
+                    0
+                  )
+                ])
+              : _vm._e()
+          ])
+        : _vm._e(),
       _vm._v(" "),
       _c("LineGraph", {
         staticClass: "mt-3",
@@ -80139,7 +80392,7 @@ __webpack_require__.r(__webpack_exports__);
 /*!*************************************************************!*\
   !*** ./resources/js/App.vue?vue&type=template&id=f348271a& ***!
   \*************************************************************/
-/*! no static exports found */
+/*! exports provided: render, staticRenderFns */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
