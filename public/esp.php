@@ -14,8 +14,8 @@ if ($apiKey !== $_ENV['API_KEY']) {
 // Create connection
 try{
     $conn = new PDO(
-        "mysql:host={$_ENV['DB_HOST']};dbname={$_ENV['DB_NAME']}",
-        $_ENV['DB_USER'],
+        "mysql:host={$_ENV['DB_HOST']};dbname={$_ENV['DB_DATABASE']}",
+        $_ENV['DB_USERNAME'],
         $_ENV['DB_PASSWORD'],
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
