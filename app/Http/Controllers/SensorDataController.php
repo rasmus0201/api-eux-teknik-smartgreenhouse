@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Sensor;
 use App\SensorData;
 use Carbon\Carbon;
+use Carbon\CarbonTimeZone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -94,7 +95,7 @@ class SensorDataController extends Controller
     {
         switch ($this->columnTypesMap[$column]) {
             case 'timestamp':
-                return Carbon::createFromTimestampUTC($value);
+                return Carbon::createFromTimestampMs($value, 'UTC');
             case 'float':
                 return floatval($value);
 
