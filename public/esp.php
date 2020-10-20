@@ -3,12 +3,12 @@
 require_once __DIR__ . '/../esp32/bootstrap/app.php';
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-    return abort(404);
+    return esp_abort(404);
 }
 
 $apiKey = sanitize_input($_REQUEST['api_key'] ?? '');
 if ($apiKey !== $_ENV['API_KEY']) {
-    return abort(403, 'Forbidden');
+    return esp_abort(403, 'Forbidden');
 }
 
 // Create connection
@@ -20,7 +20,7 @@ try{
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
 } catch(PDOException $e) {
-    abort(500, 'Server error');
+    esp_abort(500, 'Server error');
 }
 
 $lines = explode("\n", file_get_contents('php://input'));
@@ -83,7 +83,7 @@ $stmt = $conn->prepare(
 );
 
 if (!$stmt) {
-    return abort(422, 'Unprocessable data');
+    return esp_abort(422, 'Unprocessable data');
 }
 
 try {
@@ -91,5 +91,5 @@ try {
         call_user_func_array('array_merge', $values)
     );
 } catch (\Throwable $th) {
-    return abort(422, 'Unprocessable data');
+    return esp_abort(422, 'Unprocessable data');
 }

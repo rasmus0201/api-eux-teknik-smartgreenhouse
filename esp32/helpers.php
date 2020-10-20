@@ -23,8 +23,8 @@ if (!function_exists('sanitize_input')) {
     }
 }
 
-if (!function_exists('abort')) {
-    function abort($code, $message = 'Not found')
+if (!function_exists('esp_abort')) {
+    function esp_abort($code, $message = 'Not found')
     {
         http_response_code($code);
         die($message);

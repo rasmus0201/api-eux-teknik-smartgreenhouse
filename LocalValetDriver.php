@@ -44,12 +44,14 @@ class LocalValetDriver extends LaravelValetDriver
     {
         $sitePath .= '/public';
 
-        if (file_exists($sitePath.$uri) && pathinfo($sitePath.$uri)['extension'] == 'php') {
+        if (file_exists($sitePath.$uri) && (pathinfo($sitePath.$uri)['extension'] ?? '') == 'php') {
             // The requested resource is a PHP file.
             return $sitePath . $uri;
         } else if (file_exists($sitePath.$uri.'/index.php')) {
             // The requested resource is a directory and contains a child ‘index.php’ file.
             return $sitePath.$uri.'/index.php';
+        } else if (file_exists($sitePath.'/index.php')) {
+            return $sitePath.'/index.php';
         }
     }
 }
