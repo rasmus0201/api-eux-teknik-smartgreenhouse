@@ -19,6 +19,10 @@
             </div>
             <div class="col-2">
                 <button @click="getData" class="btn btn-primary">Refresh</button>
+                <div class="custom-control custom-checkbox">
+                    <input v-model="autorefresh" type="checkbox" class="custom-control-input" id="autorefresh">
+                    <label class="custom-control-label" for="autorefresh">Autorefresh</label>
+                </div>
             </div>
         </div>
         <LineGraph class="mt-3" :chart-data="chartData" :options="chartOptions" />
@@ -38,6 +42,8 @@ export default {
         return {
             delta: 1,
             interval: 60,
+            autorefresh: false,
+            refreshTimer: null,
             startDate: DateTime.local().startOf('day').toISO(),
             endDate: DateTime.local().endOf('day').toISO(),
             chartData: {},
@@ -60,12 +66,9 @@ export default {
                 },
             ],
             chartColors: {
-                humidity: '#ff0000',
-                light: '#00ff00',
-                sound: '#0000ff',
-                temperature: '#ffff00',
-                vibration: '#ff00ff',
-                secondary: '#00ffff',
+                temperature: '#ff0000',
+                humidity: '#00ff00',
+                pressure: '#0000ff',
             }
         };
     },
@@ -83,10 +86,23 @@ export default {
             return this.delta * this.interval;
         }
     },
+    watch: {
+        autorefresh(newVal) {
+            if (newVal === true) {
+                this.refreshTimer = setInterval(this.timerFunc, 60 * 1000);
+            } else {
+                clearInterval(this.refreshTimer);
+            }
+        }
+    },
     mounted() {
         this.getData();
     },
     methods: {
+        timerFunc() {
+            // TODO
+        },
+
         getData() {
             fetch('api/v1/graph?delta='+this.deltaSeconds+'&'+this.dateInterval)
                 .then((res) => res.json())
