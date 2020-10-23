@@ -15,8 +15,8 @@ class CreateSensorDataTable extends Migration
     {
         Schema::create('sensor_data', function (Blueprint $table) {
             $table->id();
-            $table->unsignedTinyInteger('device_id');
-            $table->unsignedTinyInteger('sensor_id');
+            $table->foreignId('device_id')->constrained('devices');
+            $table->foreignId('sensor_id')->constrained('sensors');
             $table->double('value', 8, 2);
             $table->timestamp('sensored_at', 6);
             $table->timestamp('created_at', 6)->nullable();
